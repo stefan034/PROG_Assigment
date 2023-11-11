@@ -1,0 +1,11 @@
+# .gitignore for Arduino projects
+
+# Ignore build files
+build/
+
+# Ignore Arduino IDE files
+*.ino
+
+# Ignore compiled binaries
+*.hex
+*.elf
