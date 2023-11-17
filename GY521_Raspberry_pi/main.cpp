@@ -1,19 +1,17 @@
-// main.cpp
-#include <iostream>
-#include "GY521_MPU6050.hpp"
+#include "gy521.hpp"
 
 int main() {
-    GY521_MPU6050 mpu;
+    GY521 gy521;
 
-    if (!mpu.Initialize()) {
-        std::cerr << "MPU-6050 initialization failed." << std::endl;
+    if (!gy521.initialize()) {
+        std::cerr << "Initialization failed." << std::endl;
         return 1;
     }
 
     while (true) {
-        int16_t accelX = mpu.ReadAccelerationX();
-        std::cout << "Acceleration X: " << accelX << std::endl;
-        bcm2835_delay(1000); // Add a delay if needed to control the data reading rate
+        gy521.readSensorData();
+        // Add a delay if needed
+        usleep(1000000); // Delay for 1 second
     }
 
     return 0;

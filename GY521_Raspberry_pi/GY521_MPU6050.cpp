@@ -1,32 +1,68 @@
-// GY521_MPU6050.cpp
-#include "GY521_MPU6050.hpp"
+#include "gy521.hpp"
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
 #include <iostream>
-#include <bcm2835.h>
 
-GY521_MPU6050::GY521_MPU6050() {
-    if (!bcm2835_init()) {
-        std::cerr << "Failed to initialize bcm2835." << std::endl;
-        exit(1);
+GY521::GY521() : i2c_fd(-1) {
+}
+
+GY521::~GY521() {
+    // Close the I2C interface
+    if (i2c_fd != -1) {
+        close(i2c_fd);
+    }
+}
+
+bool GY521::initialize() {
+    // Open the I2C interface to the GY-521
+    i2c_fd = open("/dev/i2c-1", O_RDWR);
+
+    if (i2c_fd == -1) {
+        std::cerr << "Unable to open I2C interface." << std::endl;
+        return false;
     }
 
-    bcm2835_i2c_begin();
-    bcm2835_i2c_set_baudrate(10000); // Set the I2C baudrate to 10Kbps
-    bcm2835_i2c_setSlaveAddress(0x68); // MPU-6050 I2C address (default)
+    // Set the I2C slave address
+    if (ioctl(i2c_fd, I2C_SLAVE, GY521_ADDR) < 0) {
+        std::cerr << "Unable to set I2C slave address." << std::endl;
+        return false;
+    }
+
+    // Initialize the GY-521 (Power Management Register)
+    char buf[2] = {PWR_MGMT_1, 0};
+    if (write(i2c_fd, buf, 2) != 2) {
+        std::cerr << "Error writing to the device." << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
-GY521_MPU6050::~GY521_MPU6050() {
-    bcm2835_i2c_end();
-    bcm2835_close();
-}
+void GY521::readSensorData() {
+    // Read accelerometer data
+    char buf[6];
+    if (read(i2c_fd, buf, 6) != 6) {
+        std::cerr << "Error reading from the device." << std::endl;
+        return;
+    }
 
-bool GY521_MPU6050::Initialize() {
-    // Wake up the MPU-6050 (out of sleep mode)
-    return bcm2835_i2c_writeReg8(0x6B, 0);
-}
+    int accel_x = (buf[0] << 8) | buf[1];
+    int accel_y = (buf[2] << 8) | buf[3];
+    int accel_z = (buf[4] << 8) | buf[5];
 
-int16_t GY521_MPU6050::ReadAccelerationX() {
-    char buf[2];
-    bcm2835_i2c_read_register(0x3B, buf, sizeof(buf));
-    int16_t accelX = (buf[0] << 8) | buf[1];
-    return accelX;
+    // Read gyroscope data
+    if (read(i2c_fd, buf, 6) != 6) {
+        std::cerr << "Error reading from the device." << std::endl;
+        return;
+    }
+
+    int gyro_x = (buf[0] << 8) | buf[1];
+    int gyro_y = (buf[2] << 8) | buf[3];
+    int gyro_z = (buf[4] << 8) | buf[5];
+
+    // Print the sensor values
+    std::cout << "Accelerometer: X=" << accel_x << " Y=" << accel_y << " Z=" << accel_z << std::endl;
+    std::cout << "Gyroscope: X=" << gyro_x << " Y=" << gyro_y << " Z=" << gyro_z << std::endl;
 }
