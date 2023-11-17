@@ -2,6 +2,7 @@
 #define GY521_h
 
 #include <Wire.h>
+#include "arduino.h"
 
 class GY521 {
 public:

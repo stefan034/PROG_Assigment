@@ -1,5 +1,5 @@
 #include "GY521.h"
-#include <Wire.h>
+//#include <Wire.h>
 
 GY521 gy521;
 
