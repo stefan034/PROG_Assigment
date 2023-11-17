@@ -1,4 +1,5 @@
 #include "GY521_MPU6050.hpp"
+#include <iostream>
 
 int main() {
     GY521 gy521;
