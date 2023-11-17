@@ -12,7 +12,7 @@ int main() {
     while (true) {
         gy521.readSensorData();
         // Add a delay if needed
-        usleep(1000000); // Delay for 1 second
+        fseek(1000000); // Delay for 1 second
     }
 
     return 0;
