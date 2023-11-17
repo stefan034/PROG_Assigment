@@ -1,4 +1,4 @@
-#include "gy521.hpp"
+#include "GY521_MPU6050.hpp"
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>

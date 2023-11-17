@@ -1,5 +1,5 @@
-#ifndef GY521_HPP
-#define GY521_HPP
+#ifndef GY521_MPU6050_HPP
+#define GY521_MPU6050_HPP
 
 class GY521 {
 public:
