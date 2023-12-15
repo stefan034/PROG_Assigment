@@ -1,5 +1,6 @@
 #include "GY521_MPU6050.hpp"
 #include <iostream>
+#include <unistd.h>
 
 int main() {
     GY521 gy521;
@@ -12,7 +13,7 @@ int main() {
     while (true) {
         gy521.readSensorData();
         // Add a delay if needed
-        fseek(1000000); // Delay for 1 second
+        usleep(1000000); // Delay for 1 second
     }
 
     return 0;
