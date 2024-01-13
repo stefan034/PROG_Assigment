@@ -1,21 +1,24 @@
 #include "BME280.hpp"
+#include <iomanip>
 #include <iostream>
 
 int main() {
-    try {
-        BME280 bme(1, 0x76); // Use 0x77 if your BME280 sensor has a different address
+    const char *i2cDevice = "/dev/i2c-1";  // Change this based on your Raspberry Pi's configuration
+    BME280 bme280(i2cDevice);
 
-        float temperature = bme.readTemperature();
-        float pressure = bme.readPressure();
-        float humidity = bme.readHumidity();
-
-        std::cout << "Temperature: " << temperature << " °C" << std::endl;
-        std::cout << "Pressure: " << pressure << " hPa" << std::endl;
-        std::cout << "Humidity: " << humidity << " %" << std::endl;
-    } catch (const std::exception &e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+    if (!bme280.initialize()) {
+        std::cerr << "Failed to initialize BME280 sensor." << std::endl;
         return 1;
     }
 
+    float temperature = bme280.readTemperature();
+    float pressure = bme280.readPressure();
+    float humidity = bme280.readHumidity();
+
+    std::cout << "Temperature: " << std::fixed << std::setprecision(2) << temperature << " °C" << std::endl;
+    std::cout << "Pressure: " << std::fixed << std::setprecision(2) << pressure << " hPa" << std::endl;
+    std::cout << "Humidity: " << std::fixed << std::setprecision(2) << humidity << " %" << std::endl;
+
     return 0;
 }
+

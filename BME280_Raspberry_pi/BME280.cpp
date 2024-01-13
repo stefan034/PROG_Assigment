@@ -1,127 +1,138 @@
-#include "BME280.hpp"
+#include "BME280.h"
 #include <iostream>
+#include <iomanip>
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
 
-BME280::BME280(int bus, int address) {
-    char filename[20];
-    sprintf(filename, "/dev/i2c-%d", bus);
+#define I2C_SLAVE 0x0703
+#define O_RDWR 02
+#define BME280_I2C_ADDRESS 0x76
+#define BME280_REGISTER_PRESSURE 0xF7
+#define BME280_REGISTER_TEMPERATURE 0xFA
+#define BME280_REGISTER_HUMIDITY 0xFD
 
-    if ((file = open(filename, O_RDWR)) < 0) {
-        std::cerr << "Failed to open the i2c bus" << std::endl;
-        exit(1);
-    }
+// Define I2C_SLAVE constant
+#ifndef I2C_SLAVE
+#define I2C_SLAVE 0x0703
+#endif
 
-    if (ioctl(file, I2C_SLAVE, address) < 0) {
-        std::cerr << "Failed to acquire bus access and/or talk to slave" << std::endl;
-        exit(1);
-    }
-
-    bme280Address = address;
+BME280::BME280(const char *i2cDevice) {
+    this->i2cFile = -1;
+    strncpy(this->i2cDevice, i2cDevice, sizeof(this->i2cDevice));
 }
 
 BME280::~BME280() {
-    close(file);
+    if (i2cFile != -1) {
+        close(i2cFile);
+    }
 }
 
-uint16_t BME280::read16(int reg) {
-    uint8_t buf[2];
-    if (read(file, buf, 2) != 2) {
-        std::cerr << "Failed to read from the i2c bus" << std::endl;
-        exit(1);
+bool BME280::initialize() {
+    i2cFile = open(i2cDevice, O_RDWR);
+    if (i2cFile == -1) {
+        std::cerr << "Error opening I2C device" << std::endl;
+        return false;
     }
-    return (uint16_t)(buf[0] | (buf[1] << 8));
+
+    // Alternative approach to set I2C address without direct ioctl include
+    unsigned long i2c_address = BME280_I2C_ADDRESS;
+    if (ioctl(i2cFile, I2C_SLAVE, i2c_address) < 0) {
+        std::cerr << "Error setting I2C address" << std::endl;
+        return false;
+    }
+
+    return true;
 }
 
-uint32_t BME280::read24(int reg) {
-    uint8_t buf[3];
-    if (read(file, buf, 3) != 3) {
-        std::cerr << "Failed to read from the i2c bus" << std::endl;
-        exit(1);
+int BME280::readRegister(int reg) {
+    unsigned char buf[1];
+    buf[0] = static_cast<unsigned char>(reg);
+    if (write(i2cFile, buf, 1) != 1) {
+        std::cerr << "Error writing to I2C device" << std::endl;
+        return -1;
     }
-    return (uint32_t)(buf[0] | (buf[1] << 8) | (buf[2] << 16));
+
+    if (read(i2cFile, buf, 1) != 1) {
+        std::cerr << "Error reading from I2C device" << std::endl;
+        return -1;
+    }
+
+    return buf[0];
 }
 
-void BME280::write8(int reg, int value) {
-    uint8_t buf[2] = {static_cast<uint8_t>(reg), static_cast<uint8_t>(value)};
-    if (write(file, buf, 2) != 2) {
-        std::cerr << "Failed to write to the i2c bus" << std::endl;
-        exit(1);
+void BME280::writeRegister(int reg, int value) {
+    unsigned char buf[2];
+    buf[0] = static_cast<unsigned char>(reg);
+    buf[1] = static_cast<unsigned char>(value);
+
+    if (write(i2cFile, buf, 2) != 2) {
+        std::cerr << "Error writing to I2C device" << std::endl;
     }
+}
+
+short BME280::combineRegisters(unsigned char msb, unsigned char lsb) {
+    return static_cast<short>((msb << 8) | lsb);
 }
 
 float BME280::readTemperature() {
-   int32_t adc_T = read24(0xFA) >> 4;
+    int msb = readRegister(BME280_REGISTER_TEMPERATURE);
+    int lsb = readRegister(BME280_REGISTER_TEMPERATURE + 1);
+    int xlsb = readRegister(BME280_REGISTER_TEMPERATURE + 2);
 
-    int32_t var1 = ((((adc_T >> 3) - ((int32_t)calibData.dig_T1 << 1))) *
-                    ((int32_t)calibData.dig_T2)) >>
-                   11;
+    int rawTemperature = (msb << 12) | (lsb << 4) | (xlsb >> 4);
+    int var1, var2;
+    var1 = ((((rawTemperature >> 3) - (temperatureCalibration.dig_T1 << 1))) *
+            temperatureCalibration.dig_T2) >>
+           11;
+    var2 = (((((rawTemperature >> 4) - temperatureCalibration.dig_T1) *
+              ((rawTemperature >> 4) - temperatureCalibration.dig_T1)) >>
+             12) *
+            temperatureCalibration.dig_T3) >>
+           14;
 
-    int32_t var2 = (((((adc_T >> 4) - ((int32_t)calibData.dig_T1)) *
-                      ((adc_T >> 4) - ((int32_t)calibData.dig_T1))) >>
-                     12) *
-                    ((int32_t)calibData.dig_T3)) >>
-                   14;
-
-    t_fine = var1 + var2;
-
-    return ((t_fine * 5 + 128) >> 8) / 100.0;
+    int t_fine = var1 + var2;
+    float temperature = (t_fine * 5 + 128) >> 8;
+    return temperature / 100.0f;
 }
 
 float BME280::readPressure() {
-    int32_t adc_P = read24(0xF7) >> 4;
+    int msb = readRegister(BME280_REGISTER_PRESSURE);
+    int lsb = readRegister(BME280_REGISTER_PRESSURE + 1);
+    int xlsb = readRegister(BME280_REGISTER_PRESSURE + 2);
 
-    int64_t var1, var2, p;
+    int rawPressure = (msb << 12) | (lsb << 4) | (xlsb >> 4);
+    int var1, var2;
+    var1 = (((temperatureFine) >> 1) - 64000);
+    var2 = (((((rawPressure >> 4) - pressureCalibration.dig_P1) *
+              ((rawPressure >> 4) - pressureCalibration.dig_P1)) >>
+             12) *
+            pressureCalibration.dig_P3) >>
+           14;
 
-    var1 = ((int64_t)t_fine) - 128000;
-    var2 = var1 * var1 * (int64_t)calibData.dig_P6;
-    var2 = var2 + ((var1 * (int64_t)calibData.dig_P5) << 17);
-    var2 = var2 + (((int64_t)calibData.dig_P4) << 35);
-    var1 = ((var1 * var1 * (int64_t)calibData.dig_P3) >> 8) +
-           ((var1 * (int64_t)calibData.dig_P2) << 12);
-    var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)calibData.dig_P1) >> 33;
-
-    if (var1 == 0) {
-        return 0; // avoid exception caused by division by zero
-    }
-
-    p = 1048576 - adc_P;
-    p = (((p << 31) - var2) * 3125) / var1;
-    var1 = (((int64_t)calibData.dig_P9) * (p >> 13) * (p >> 13)) >> 25;
-    var2 = (((int64_t)calibData.dig_P8) * p) >> 19;
-
-    p = ((p + var1 + var2) >> 8) + (((int64_t)calibData.dig_P7) << 4);
-
-    return static_cast<float>(p) / 256.0;
+    int t_fine = var1 + var2;
+    float pressure = (rawPressure + (var1 + var2 + 32768) * pressureCalibration.dig_P4) >> 15;
+    return pressure / 100.0f;
 }
 
 float BME280::readHumidity() {
-    int32_t adc_H = read16(0xFD);
+    int msb = readRegister(BME280_REGISTER_HUMIDITY);
+    int lsb = readRegister(BME280_REGISTER_HUMIDITY + 1);
 
-    int32_t v_x1_u32r;
+    int rawHumidity = (msb << 8) | lsb;
+    int var1 = (temperatureFine - 76800);
+    var1 = (((((rawHumidity << 14) - (humidityCalibration.dig_H4 << 20) - (humidityCalibration.dig_H5 * var1)) +
+              16384) >>
+             15) *
+            (((((((var1 * humidityCalibration.dig_H6) >> 10) *
+                 (((var1 * humidityCalibration.dig_H3) >> 11) + 32768)) >>
+                10) +
+               2097152) *
+              humidityCalibration.dig_H2 +
+              8192) >>
+             14));
+    var1 = var1 - ((var1 >> 15) * ((var1 >> 15) + 1) / 2);
+    var1 = (var1 < 0) ? 0 : var1;
 
-    v_x1_u32r = (t_fine - ((int32_t)76800));
-    v_x1_u32r = (((((adc_H << 14) - (((int32_t)calibData.dig_H4) << 20) -
-                     (((int32_t)calibData.dig_H5) * v_x1_u32r)) +
-                    ((int32_t)16384)) >>
-                   15) *
-                  (((((((v_x1_u32r * ((int32_t)calibData.dig_H6)) >> 10) *
-                       (((v_x1_u32r * ((int32_t)calibData.dig_H3)) >> 11) +
-                        ((int32_t)32768))) >>
-                      10) +
-                     ((int32_t)2097152)) *
-                    ((int32_t)calibData.dig_H2) +
-                    8192) >>
-                   14));
-
-    v_x1_u32r = (v_x1_u32r - (((((v_x1_u32r >> 15) * (v_x1_u32r >> 15)) >>
-                                7) *
-                               ((int32_t)calibData.dig_H1)) >>
-                              4));
-
-    v_x1_u32r = (v_x1_u32r < 0 ? 0 : v_x1_u32r);
-    v_x1_u32r = (v_x1_u32r > 419430400 ? 419430400 : v_x1_u32r);
-
-    return static_cast<float>(v_x1_u32r >> 12) / 1024.0;
+    float humidity = static_cast<float>(var1) / 1024.0f;
+    return humidity;
 }
