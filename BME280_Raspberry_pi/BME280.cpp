@@ -1,4 +1,4 @@
-#include "BME280.h"
+#include "BME280.hpp"
 #include <iostream>
 #include <iomanip>
 #include <fcntl.h>
