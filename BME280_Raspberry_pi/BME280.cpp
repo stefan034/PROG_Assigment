@@ -44,6 +44,32 @@
 #define BME280_REG_HUM_MSB    0xFD
 #define BME280_REG_HUM_LSB    0xFE
 
+int16_t BME280::readS16(uint8_t reg){
+    return static_cast<int16_t.(read16(reg));
+}
+
+uint8_t BME280::readByte(uint8_t reg) {
+    if (write(fd, &reg, 1) != 1) {
+        fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
+        return 0;
+    }
+
+    uint8_t value;
+    if (read(fd, &value, 1) != 1) {
+        fprintf(stderr, "Error reading from register 0x%02X.\n", reg);
+        return 0;
+    }
+
+    return value;
+}
+
+void BME280::writeByte(uint8_t reg, uint8_t value) {
+    uint8_t data[2] = {reg, value};
+    if (write(fd, data, 2) != 2) {
+        fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
+    }
+}
+
 BME280::BME280(int deviceAddress) {
     char filename[20];
     sprintf(filename, "/dev/i2c-1");
@@ -79,31 +105,6 @@ bool BME280::init() {
     return true;
 }
 
-int16_t BME280::readS16(uint8_t reg){
-    return static_cast<int16_t.(read16(reg));
-}
-
-uint8_t BME280::readByte(uint8_t reg) {
-    if (write(fd, &reg, 1) != 1) {
-        fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
-        return 0;
-    }
-
-    uint8_t value;
-    if (read(fd, &value, 1) != 1) {
-        fprintf(stderr, "Error reading from register 0x%02X.\n", reg);
-        return 0;
-    }
-
-    return value;
-}
-
-void BME280::writeByte(uint8_t reg, uint8_t value) {
-    uint8_t data[2] = {reg, value};
-    if (write(fd, data, 2) != 2) {
-        fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
-    }
-}
 
 float BME280::getTemperature() {
     int32_t tempRaw = readTemperature();
