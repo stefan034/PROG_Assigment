@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <cstdio>
+#include <stdint.h>
 
 #define BME280_REG_DIG_T1  0x88
 #define BME280_REG_DIG_T2  0x8A
