@@ -2,6 +2,7 @@
 
 #ifndef BME280_LIBRARY_H
 #define BME280_LIBRARY_H
+#include <stdint.h>
 
 class BME280 {
 public:
