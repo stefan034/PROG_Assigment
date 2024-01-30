@@ -45,7 +45,7 @@
 #define BME280_REG_HUM_LSB    0xFE
 
 uint16_t BME280::readS16(uint8_t reg){
-    return static_cast<int16_t(readS16(reg));
+    return static_cast<int16_t>(readS16(reg));
 }
 
 uint8_t BME280::readByte(uint8_t reg) {
