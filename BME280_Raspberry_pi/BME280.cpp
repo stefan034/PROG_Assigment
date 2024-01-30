@@ -62,8 +62,12 @@ BME280::~BME280() {
     close(fd);
 }
 
+int16_t BME280::readS16(uint8_t reg){
+    return static_cast<int16_t.(read16(reg));
+}
+
 bool BME280::init() {
-    char chipID = readlink(BME280_REG_CHIPID,0,0);// readlink = readByte
+    char chipID = readByte(BME280_REG_CHIPID,0,0);
     if (chipID != 0x60) {
         fprintf(stderr, "Error: Unable to find BME280 sensor.\n");
         return false;
@@ -72,8 +76,8 @@ bool BME280::init() {
     readCalibration();
 
     // Set configuration
-    write(BME280_REG_CTRL_HUM, 0x05);  // Set humidity oversampling to x1 // write = writeByte
-    write(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 // write = writeByte
+    writeByte(BME280_REG_CTRL_HUM, 0x05);  // Set humidity oversampling to x1 
+    writeByte(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 
 
     return true;
 }
@@ -114,15 +118,15 @@ float BME280::getHumidity() {
 }
 
 void BME280::readCalibration() {
-    calib[0] = read(BME280_REG_DIG_T1);// read = readS16
-    calib[1] = read(BME280_REG_DIG_T2);// read = readS16
-    calib[2] = read(BME280_REG_DIG_T3);
+    calib[0] = readS16(BME280_REG_DIG_T1);
+    calib[1] = readS16(BME280_REG_DIG_T2);
+    calib[2] = readS16(BME280_REG_DIG_T3);
 
-    calib[3] = read(BME280_REG_DIG_P1);
-    calib[4] = read(BME280_REG_DIG_P2);
-    calib[5] = read(BME280_REG_DIG_P3);
-    calib[6] = read(BME280_REG_DIG_P4);
-    calib[7] = read(BME280_REG_DIG_P5);
-    calib[8] = read(BME280_REG_DIG_P6);
-    calib[9] = read(BME280_REG_DIG_P7);
+    calib[3] = readS16(BME280_REG_DIG_P1);
+    calib[4] = readS16(BME280_REG_DIG_P2);
+    calib[5] = readS16(BME280_REG_DIG_P3);
+    calib[6] = readS16(BME280_REG_DIG_P4);
+    calib[7] = readS16(BME280_REG_DIG_P5);
+    calib[8] = readS16(BME280_REG_DIG_P6);
+    calib[9] = readS16(BME280_REG_DIG_P7);
 }
