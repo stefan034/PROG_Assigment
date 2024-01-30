@@ -64,7 +64,7 @@ BME280::~BME280() {
 
 
 bool BME280::init() {
-    char chipID = readByte(BME280_REG_CHIPID,0,0);
+    char chipID = readByte(BME280_REG_CHIPID);
     if (chipID != 0x60) {
         fprintf(stderr, "Error: Unable to find BME280 sensor.\n");
         return false;

@@ -9,10 +9,7 @@ public:
     BME280(int deviceAddress = 0x76);
     ~BME280();
 
-    uint16_t readS16();
-    void writeByte();
-    uint8_t readByte();
-    
+
     bool init();
     float getTemperature();
     float getPressure();
@@ -26,6 +23,10 @@ private:
     uint32_t readTemperature();
     uint32_t readPressure();
     uint32_t readHumidity();
+
+    uint16_t readS16(uint8_t reg);
+    void writeByte(uint8_t reg);
+    uint8_t readByte(uint8_t reg, uint8_t value);
 };
 
 #endif // BME280_LIBRARY_H
