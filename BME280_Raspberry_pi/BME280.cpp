@@ -5,6 +5,7 @@
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <cstdio>
 
 #define BME280_REG_DIG_T1  0x88
 #define BME280_REG_DIG_T2  0x8A
@@ -78,7 +79,9 @@ bool BME280::init() {
 
 float BME280::getTemperature() {
     int32_t tempRaw = readTemperature();
-    int32_t var1, var2, temperature;
+    int32_t var1; 
+    int32_t var2;
+    int32_t temperature;
 
     var1 = ((((tempRaw >> 3) - (calib[0] << 1))) * (calib[1])) >> 11;
     var2 = (((((tempRaw >> 4) - (calib[2])) * ((tempRaw >> 4) - (calib[2]))) >> 12) * (calib[3])) >> 14;

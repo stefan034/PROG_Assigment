@@ -18,7 +18,7 @@ private:
     int calib[24];
 
     void readCalibration();
-    int32_t readTemperature();
+    uint32_t readTemperature();
     uint32_t readPressure();
     uint32_t readHumidity();
 };
