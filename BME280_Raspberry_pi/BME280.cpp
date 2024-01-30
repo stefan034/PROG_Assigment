@@ -63,7 +63,7 @@ BME280::~BME280() {
 }
 
 bool BME280::init() {
-    char chipID = readlink(BME280_REG_CHIPID);// readlink = readByte
+    char chipID = readlink(BME280_REG_CHIPID,0,0);// readlink = readByte
     if (chipID != 0x60) {
         fprintf(stderr, "Error: Unable to find BME280 sensor.\n");
         return false;
@@ -73,7 +73,7 @@ bool BME280::init() {
 
     // Set configuration
     write(BME280_REG_CTRL_HUM, 0x05);  // Set humidity oversampling to x1 // write = writeByte
-    writeByte(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 // write = writeByte
+    write(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 // write = writeByte
 
     return true;
 }
