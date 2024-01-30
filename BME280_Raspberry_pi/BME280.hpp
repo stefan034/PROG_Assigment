@@ -1,26 +1,26 @@
-#ifndef BME280_HPP
-#define BME280_HPP
+// BME280Library.h
 
-//#include <cstdint>
-#include <cstdint>
+#ifndef BME280_LIBRARY_H
+#define BME280_LIBRARY_H
 
 class BME280 {
 public:
-    BME280(int bus, int address);
+    BME280(int deviceAddress = 0x76);
     ~BME280();
 
-    float readTemperature();
-    float readPressure();
-    float readHumidity();
+    bool init();
+    float getTemperature();
+    float getPressure();
+    float getHumidity();
 
 private:
-    int file;
-    int bme280Address;
+    int fd;
+    int calib[24];
 
-    uint16_t read16(int reg);
-    uint32_t read24(int reg);
-    void write8(int reg, int value);
-    int32_t t_fine;
+    void readCalibration();
+    int32_t readTemperature();
+    uint32_t readPressure();
+    uint32_t readHumidity();
 };
 
-#endif // BME280_HPP
+#endif // BME280_LIBRARY_H
