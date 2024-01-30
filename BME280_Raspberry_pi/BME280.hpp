@@ -9,6 +9,10 @@ public:
     BME280(int deviceAddress = 0x76);
     ~BME280();
 
+    uint16_t readS16();
+    void writeByte();
+    uint8_t readByte();
+    
     bool init();
     float getTemperature();
     float getPressure();

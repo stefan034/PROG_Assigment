@@ -62,9 +62,6 @@ BME280::~BME280() {
     close(fd);
 }
 
-int16_t BME280::readS16(uint8_t reg){
-    return static_cast<int16_t.(read16(reg));
-}
 
 bool BME280::init() {
     char chipID = readByte(BME280_REG_CHIPID,0,0);
@@ -80,6 +77,32 @@ bool BME280::init() {
     writeByte(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 
 
     return true;
+}
+
+int16_t BME280::readS16(uint8_t reg){
+    return static_cast<int16_t.(read16(reg));
+}
+
+uint8_t BME280::readByte(uint8_t reg) {
+    if (write(fd, &reg, 1) != 1) {
+        fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
+        return 0;
+    }
+
+    uint8_t value;
+    if (read(fd, &value, 1) != 1) {
+        fprintf(stderr, "Error reading from register 0x%02X.\n", reg);
+        return 0;
+    }
+
+    return value;
+}
+
+void BME280::writeByte(uint8_t reg, uint8_t value) {
+    uint8_t data[2] = {reg, value};
+    if (write(fd, data, 2) != 2) {
+        fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
+    }
 }
 
 float BME280::getTemperature() {
