@@ -105,7 +105,7 @@ bool BME280::init() {
     return true;
 }
 
-int32_t BME280::readTemperature() {
+uint32_t BME280::readTemperature() {
     // Read raw temperature data from the sensor
     uint8_t msb = readByte(BME280_REG_TEMP_MSB);
     uint8_t lsb = readByte(BME280_REG_TEMP_LSB);
@@ -133,6 +133,20 @@ float BME280::getTemperature() {
     return static_cast<float>((temperature * 5 + 128) >> 8) / 100.0f;
 }
 
+uint32_t BME280::readPressure() {
+    // Read raw pressure data from the sensor
+    uint8_t msb = readByte(BME280_REG_PRESS_MSB);
+    uint8_t lsb = readByte(BME280_REG_PRESS_LSB);
+    uint8_t xlsb = readByte(BME280_REG_PRESS_XLSB);
+
+    // Combine the 3 bytes into a 20-bit raw pressure value
+    uint32_t rawPressure = (static_cast<uint32_t>(msb) << 12) |
+                           (static_cast<uint32_t>(lsb) << 4) |
+                           (static_cast<uint32_t>(xlsb) >> 4);
+
+    return rawPressure;
+}
+
 float BME280::getPressure() {
     int32_t pressureRaw = readPressure();
     int64_t var1, var2, p;
@@ -142,6 +156,17 @@ float BME280::getPressure() {
     p = ((var1 + var2) * 281474976710656LL) >> 44;
 
     return static_cast<float>(p) / 256.0f;
+}
+
+uint32_t BME280::readHumidity() {
+    // Read raw humidity data from the sensor
+    uint8_t msb = readByte(BME280_REG_HUM_MSB);
+    uint8_t lsb = readByte(BME280_REG_HUM_LSB);
+
+    // Combine the 2 bytes into a 16-bit raw humidity value
+    uint16_t rawHumidity = (static_cast<uint16_t>(msb) << 8) | lsb;
+
+    return rawHumidity;
 }
 
 float BME280::getHumidity() {
