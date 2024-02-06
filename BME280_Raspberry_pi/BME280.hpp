@@ -15,14 +15,15 @@ public:
     float getPressure();
     float getHumidity();
 
+    uint32_t readTemperature();
+    uint32_t readPressure();
+    uint32_t readHumidity();
+
 private:
     int fd;
     int calib[24];
 
     void readCalibration();
-    uint32_t readTemperature();
-    uint32_t readPressure();
-    uint32_t readHumidity();
 
     uint16_t readS16(uint8_t reg);
     uint8_t readByte(uint8_t reg);

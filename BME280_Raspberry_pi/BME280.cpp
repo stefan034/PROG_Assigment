@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <stdint.h>
 
-#define BME280_REG_DIG_T1  0x88
+#define BME280_REG_DIG_T1  0x88 
 #define BME280_REG_DIG_T2  0x8A
 #define BME280_REG_DIG_T3  0x8C
 
@@ -103,6 +103,20 @@ bool BME280::init() {
     writeByte(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 
 
     return true;
+}
+
+int32_t BME280::readTemperature() {
+    // Read raw temperature data from the sensor
+    uint8_t msb = readByte(BME280_REG_TEMP_MSB);
+    uint8_t lsb = readByte(BME280_REG_TEMP_LSB);
+    uint8_t xlsb = readByte(BME280_REG_TEMP_XLSB);
+
+    // Combine the 3 bytes into a 20-bit raw temperature value
+    int32_t rawTemperature = (static_cast<int32_t>(msb) << 12) |
+                              (static_cast<int32_t>(lsb) << 4) |
+                              (static_cast<int32_t>(xlsb) >> 4);
+
+    return rawTemperature;
 }
 
 
