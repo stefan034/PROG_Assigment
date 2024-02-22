@@ -45,7 +45,8 @@
 #define BME280_REG_HUM_LSB    0xFE
 
 uint16_t BME280::readS16(uint8_t reg){
-    return static_cast<int16_t>(readS16(reg));
+    uint16_t rawValue = readS16(reg);
+    return static_cast<int16_t>(rawValue);
 }
 
 uint8_t BME280::readByte(uint8_t reg) {
@@ -53,7 +54,7 @@ uint8_t BME280::readByte(uint8_t reg) {
         fprintf(stderr, "Error writing to register 0x%02X.\n", reg);
         return 0;
     }
-
+    // value hoort hier niet 
     uint8_t value;
     if (read(fd, &value, 1) != 1) {
         fprintf(stderr, "Error reading from register 0x%02X.\n", reg);
@@ -91,7 +92,7 @@ BME280::~BME280() {
 
 bool BME280::init() {
     char chipID = readByte(BME280_REG_CHIPID);
-    if (chipID != 0x60) {
+    if (chipID != 0x76) {
         fprintf(stderr, "Error: Unable to find BME280 sensor.\n");
         return false;
     }
