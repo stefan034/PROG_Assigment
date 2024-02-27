@@ -2,7 +2,7 @@
 #define MQTT_PUBLISHER_HPP
 
 #include <string>
-#include <mqtt/async_client.h>
+#include <async_client.h>
 
 class MQTTPublisher {
 public:
