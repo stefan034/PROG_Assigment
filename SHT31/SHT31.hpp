@@ -5,7 +5,7 @@
 
 class SHT31 {
 public:
-    SHT31(const char* i2cDevice = "/dev/i2c-1", uint8_t i2cAddr = 0x44);
+    SHT31(const char* i2cDevice = "/dev/i2c-1", uint8_t i2cAddr = 0x76);
     ~SHT31();
 
     bool begin();

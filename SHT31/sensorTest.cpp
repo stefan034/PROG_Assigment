@@ -9,10 +9,12 @@ int main() {
     }
 
     float temperature, humidity;
-    if (sensor.readSensor(temperature, humidity)) {
+    if (sensor.readSensor(temperature, humidity)) 
+    {
         std::cout << "Temperature: " << temperature << " C" << std::endl;
         std::cout << "Humidity: " << humidity << " %" << std::endl;
-    } else {
+    }
+     else {
         std::cerr << "Failed to read from sensor." << std::endl;
     }
 
