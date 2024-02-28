@@ -14,9 +14,9 @@ int main() {
     float pressure = bme280.getPressure();
     float humidity = bme280.getHumidity();
 
-    std::cout << "Temperature: " << temperature << " °C" << std::endl;
-    std::cout << "Pressure: " << pressure << " hPa" << std::endl;
-    std::cout << "Humidity: " << humidity << " %" << std::endl;
+    std::cout << "Temperature: " << temperature << " °C " << std::endl;
+    std::cout << "Pressure: " << pressure << " hPa " << std::endl;
+    std::cout << "Humidity: " << humidity << " % " << std::endl;
 
     return 0;
 }
