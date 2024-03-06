@@ -47,7 +47,7 @@
 uint16_t BME280::readS16(uint8_t reg){
     uint8_t msb = readByte(reg);
     uint8_t lsb = readByte(reg + 1);
-    uint16_t rawValue = (msb << 8) | lsb;
+    uint16_t rawValue = (msb << 8) | lsb; 
     return rawValue;
 }
 
@@ -134,7 +134,7 @@ float BME280::getTemperature() {
     var2 = (((((tempRaw >> 4) - (calib[2])) * ((tempRaw >> 4) - (calib[2]))) >> 12) * (calib[3])) >> 14;
     temperature = var1 + var2;
 
-    return static_cast<float>((temperature * 5 + 128) >> 8) / 100.0f;
+    return static_cast<float>((temperature * 5 + 128) >> 8); /// </100.0f>
 }
 
 uint32_t BME280::readPressure() {
