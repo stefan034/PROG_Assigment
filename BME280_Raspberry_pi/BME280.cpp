@@ -29,6 +29,7 @@
 #define BME280_REG_DIG_H5  0xE5
 #define BME280_REG_DIG_H6  0xE7
 
+
 #define BME280_REG_CHIPID  0xD0
 #define BME280_REG_RESET   0xE0
 #define BME280_REG_CTRL_HUM 0xF2
@@ -103,8 +104,8 @@ bool BME280::init() {
     readCalibration();
 
     // Set configuration
-    writeByte(BME280_REG_CTRL_HUM, 0x05);  // Set humidity oversampling to x1 
-    writeByte(BME280_REG_CTRL_MEAS, 0xB7); // Set temperature and pressure oversampling to x16 
+    writeByte(BME280_REG_CTRL_HUM, 0x01);  // Set humidity oversampling to x1 <0x05>
+    writeByte(BME280_REG_CTRL_MEAS, 0x05); // Set temperature and pressure oversampling to x16 <0xB7>
 
     return true;
 }
@@ -134,7 +135,7 @@ float BME280::getTemperature() {
     var2 = (((((tempRaw >> 4) - (calib[2])) * ((tempRaw >> 4) - (calib[2]))) >> 12) * (calib[3])) >> 14;
     temperature = var1 + var2;
 
-    return static_cast<float>((temperature * 5 + 128) >> 8); /// </100.0f>
+    return static_cast<float>((temperature * 5 + 128) >> 8/100.0f); /// </100.0f>
 }
 
 uint32_t BME280::readPressure() {
