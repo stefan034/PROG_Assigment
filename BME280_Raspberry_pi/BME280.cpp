@@ -135,7 +135,7 @@ float BME280::getTemperature() {
     var2 = (((((tempRaw >> 4) - (calib[2])) * ((tempRaw >> 4) - (calib[2]))) >> 12) * (calib[3])) >> 14;
     temperature = var1 + var2;
 
-    return static_cast<float>((temperature * 5 + 128) >> 8/100.0f); /// </100.0f>
+    return static_cast<float>((temperature * 5 + 128) >> 8) /100.0f; /// </100.0f>
 }
 
 uint32_t BME280::readPressure() {
