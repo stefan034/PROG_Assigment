@@ -1,22 +1,25 @@
-// main.cpp
 #include "BME280.hpp"
 #include <iostream>
+#include <unistd.h>
 
 int main() {
-    BME280 bme280;
+    BME280 sensor;
 
-    if (!bme280.init()) {
-        std::cerr << "Error initializing BME280 sensor." << std::endl;
+    if (!sensor.begin()) {
+        std::cerr << "Failed to initialize BME280 sensor!" << std::endl;
         return 1;
     }
 
-    float temperature = bme280.getTemperature();
-    float pressure = bme280.getPressure();
-    float humidity = bme280.getHumidity();
+    while (true) {
+        float temp, press, hum;
+        sensor.readData(temp, press, hum);
 
-    std::cout << "Temperature: " << temperature << " °C " << std::endl;
-    std::cout << "Pressure: " << pressure << " hPa " << std::endl;
-    std::cout << "Humidity: " << humidity << " % " << std::endl;
+        std::cout << "Temperature: " << temp << " °C\n";
+        std::cout << "Pressure: " << press << " hPa\n";
+        std::cout << "Humidity: " << hum << " %\n\n";
+
+        sleep(2); // Wait 2 seconds
+    }
 
     return 0;
 }
