@@ -42,6 +42,7 @@ void BME280::readRegs(uint8_t reg, uint8_t* buffer, uint8_t length) {
 
 bool BME280::begin() {
     uint8_t id = readReg(0xD0);
+    std::cout << "Chip ID: " << std::hex << (int)id << std::endl;
     if (id != 0x60) return false;
 
     writeReg(0xF2, 0x01); // Humidity oversampling x1
