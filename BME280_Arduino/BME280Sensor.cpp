@@ -12,4 +12,4 @@ void BME280Sensor::readData(float &temperature, float &pressure, float &humidity
   temperature = bme.readTemperature();
   pressure = bme.readPressure() / 100.0F; // Convert pressure to hPa
   humidity = bme.readHumidity();
-}
+} 
