@@ -74,8 +74,10 @@ void BME280::readCalibrationData() {
     readRegs(0xE1, buf, 7);
     dig_H2 = buf[1] << 8 | buf[0];
     dig_H3 = buf[2];
-    dig_H4 = (buf[3] << 4) | (buf[4] & 0x0F);
-    dig_H5 = (buf[5] << 4) | (buf[4] >> 4);
+    // dig_H4 = (buf[3] << 4) | (buf[4] & 0x0F);
+    // dig_H5 = (buf[5] << 4) | (buf[4] >> 4);
+    dig_H4 = (int16_t)((buf[3] << 4) | (buf[4] & 0x0F));
+    dig_H5 = (int16_t)((buf[5] << 4) | (buf[4] >> 4));
     dig_H6 = buf[6];
 }
 
