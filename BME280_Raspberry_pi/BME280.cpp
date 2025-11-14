@@ -60,7 +60,7 @@ void BME280::readCalibrationData() {
     dig_T3 = buf[5] << 8 | buf[4];
 
     dig_P1 = buf[7] << 8 | buf[6];
-    dig_P2 = buf[9] << 8 | buf[8];
+    dig_P2 = buf[9] << 8 | buf[8]; 
     dig_P3 = buf[11] << 8 | buf[10];
     dig_P4 = buf[13] << 8 | buf[12];
     dig_P5 = buf[15] << 8 | buf[14];
