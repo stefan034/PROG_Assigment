@@ -23,7 +23,6 @@ private:
     uint8_t  dig_H1;
     int16_t dig_H2, dig_H3;
     int8_t  dig_H6;
-    // uint8_t dig_H4, dig_H5;
     int16_t dig_H4, dig_H5;
 
     int32_t t_fine;
