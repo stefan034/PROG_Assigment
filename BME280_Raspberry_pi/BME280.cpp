@@ -5,6 +5,15 @@
 #include <linux/i2c-dev.h>
 #include <iostream>
 #include <cstring>
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include "MockI2C.hpp"
+
+using ::testing::_;
+using ::testing::Return;
+using ::testing::Invoke;
+using ::testing::DoAll;
+using ::testing::SetArrayArgument;
 
 BME280::BME280(int i2c_bus, uint8_t address) : i2c_addr(address) {
     char filename[20];
