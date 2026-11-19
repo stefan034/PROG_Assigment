@@ -13,11 +13,11 @@ find_package(Threads REQUIRED)
 
 add_executable(roomba_mqtt
   src/main.cpp
-  src/serial_port.cpp
-  src/roomba.cpp
-  src/sensor_data.cpp
-  src/mqtt_client.cpp
-  src/command_handler.cpp
+  src/SerialPort.cpp
+  src/Roomba.cpp
+  src/SensorData.cpp
+  src/MQTTClient.cpp
+  src/CommandHandler.cpp
 )
 
 target_include_directories(roomba_mqtt PRIVATE include ${MOSQUITTO_INCLUDE_DIRS})
