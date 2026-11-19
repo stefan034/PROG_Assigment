@@ -6,10 +6,10 @@
 #include <string>
 #include <thread>
 
-#include "include/CommandHandler.hpp"
-#include "include/MQTTClient.hpp"
-#include "include/Roomba.hpp"
-#include "include/SerialPort.hpp"
+#include "CommandHandler.hpp"
+#include "MQTTClient.hpp"
+#include "Roomba.hpp"
+#include "SerialPort.hpp"
 
 namespace {
 std::atomic<bool> g_running{true};
