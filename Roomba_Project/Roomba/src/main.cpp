@@ -3,9 +3,11 @@
 #include <csignal>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <thread>
 
+#include "STM_Com.hpp"
 #include "CommandHandler.hpp"
 #include "MQTTClient.hpp"
 #include "Roomba.hpp"
@@ -16,7 +18,7 @@ std::atomic<bool> g_running{true};
 void onSignal(int) { g_running = false; }
 
 struct Config {
-    std::string device = "/dev/ttyUSB0";
+    std::string device = "/dev/ttyUSB0";  // Roomba; "none" = geen Roomba gebruiken
     int baud = 115200;
     std::string host = "localhost";
     int port = 1883;
@@ -25,19 +27,26 @@ struct Config {
     std::string prefix = "roomba";
     std::string startMode = "safe";  // passive | safe | full
     int pollMs = 200;                // niet sneller dan 15 ms (OI-limiet)
+
+    std::string bmeDevice;           // leeg = BME280 uitgeschakeld
+    int bmeBaud = 115200;
+    std::string bmeTopic;            // leeg = <prefix>/bme280
 };
 
 void usage(const char* prog) {
     std::cout << "Gebruik: " << prog << " [opties]\n"
-              << "  --device PAD     seriële poort (standaard /dev/ttyUSB0)\n"
-              << "  --baud N         115200 of 19200 (standaard 115200)\n"
-              << "  --host HOST      MQTT broker (standaard localhost)\n"
-              << "  --port N         MQTT poort (standaard 1883)\n"
-              << "  --user NAAM      MQTT gebruikersnaam\n"
-              << "  --password PW    MQTT wachtwoord\n"
-              << "  --prefix TOPIC   topic-prefix (standaard roomba)\n"
-              << "  --mode MODE      passive | safe | full (standaard safe)\n"
-              << "  --poll-ms N      sensor-interval in ms (standaard 200)\n";
+              << "  --device PAD       Roomba seriële poort (standaard /dev/ttyUSB0, 'none' = uit)\n"
+              << "  --baud N           Roomba baudrate: 115200 of 19200 (standaard 115200)\n"
+              << "  --host HOST        MQTT broker (standaard localhost)\n"
+              << "  --port N           MQTT poort (standaard 1883)\n"
+              << "  --user NAAM        MQTT gebruikersnaam\n"
+              << "  --password PW      MQTT wachtwoord\n"
+              << "  --prefix TOPIC     topic-prefix (standaard roomba)\n"
+              << "  --mode MODE        passive | safe | full (standaard safe)\n"
+              << "  --poll-ms N        Roomba sensor-interval in ms (standaard 200)\n"
+              << "  --bme-device PAD   seriële poort van de STM32 met BME280 (bv. /dev/ttyACM0)\n"
+              << "  --bme-baud N       baudrate van de STM32 (standaard 115200)\n"
+              << "  --bme-topic TOPIC  MQTT-topic voor BME280 (standaard <prefix>/bme280)\n";
 }
 
 bool parseArgs(int argc, char** argv, Config& c) {
@@ -59,12 +68,16 @@ bool parseArgs(int argc, char** argv, Config& c) {
         else if (a == "--prefix" && next(v)) c.prefix = v;
         else if (a == "--mode" && next(v)) c.startMode = v;
         else if (a == "--poll-ms" && next(v)) c.pollMs = std::atoi(v.c_str());
+        else if (a == "--bme-device" && next(v)) c.bmeDevice = v;
+        else if (a == "--bme-baud" && next(v)) c.bmeBaud = std::atoi(v.c_str());
+        else if (a == "--bme-topic" && next(v)) c.bmeTopic = v;
         else {
             std::cerr << "Onbekende of onvolledige optie: " << a << "\n";
             return false;
         }
     }
     if (c.pollMs < 15) c.pollMs = 15;
+    if (c.bmeTopic.empty()) c.bmeTopic = c.prefix + "/bme280";
     return true;
 }
 }  // namespace
@@ -75,24 +88,31 @@ int main(int argc, char** argv) {
         usage(argv[0]);
         return 1;
     }
+    const bool useRoomba = cfg.device != "none";
+    if (!useRoomba && cfg.bmeDevice.empty()) {
+        std::cerr << "Niets te doen: geef een Roomba (--device) en/of een BME280 (--bme-device) op.\n";
+        return 1;
+    }
 
     struct sigaction sa{};
     sa.sa_handler = onSignal;
     sigaction(SIGINT, &sa, nullptr);
     sigaction(SIGTERM, &sa, nullptr);
 
-    // 1. Seriële verbinding met de Roomba
+    // 1. Seriële verbinding met de Roomba (optioneel)
     SerialPort serial;
-    if (!serial.open(cfg.device, cfg.baud)) {
-        std::cerr << "Kan seriële poort niet openen: " << serial.lastError() << "\n";
-        return 1;
-    }
     Roomba roomba(serial);
-    roomba.start();  // OI starten -> Passive
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    if (cfg.startMode == "safe") roomba.safe();
-    else if (cfg.startMode == "full") roomba.full();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if (useRoomba) {
+        if (!serial.open(cfg.device, cfg.baud)) {
+            std::cerr << "Kan seriële poort niet openen: " << serial.lastError() << "\n";
+            return 1;
+        }
+        roomba.start();  // OI starten -> Passive
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        if (cfg.startMode == "safe") roomba.safe();
+        else if (cfg.startMode == "full") roomba.full();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
     // 2. MQTT
     const std::string statusTopic = cfg.prefix + "/status";
@@ -102,34 +122,51 @@ int main(int argc, char** argv) {
     if (!cfg.user.empty()) mqtt.setCredentials(cfg.user, cfg.password);
     mqtt.setWill(statusTopic, "offline", true);
 
-    CommandHandler handler(roomba, cfg.prefix);
-    mqtt.setOnMessage([&](const std::string& t, const std::string& p) { handler.handle(t, p); });
+    std::unique_ptr<CommandHandler> handler;
+    if (useRoomba) {
+        handler = std::make_unique<CommandHandler>(roomba, cfg.prefix);
+        mqtt.setOnMessage([&](const std::string& t, const std::string& p) { handler->handle(t, p); });
+        mqtt.addSubscription(cfg.prefix + "/cmd/#");
+    }
     mqtt.setOnConnect([&] { mqtt.publish(statusTopic, "online", true); });
-    mqtt.addSubscription(cfg.prefix + "/cmd/#");
 
     if (!mqtt.connect(cfg.host, cfg.port)) return 1;
 
-    // 3. Hoofdlus: sensoren lezen en publiceren
-    std::cout << "Gestart. Sensoren op '" << sensorTopic << "', commando's op '" << cfg.prefix << "/cmd/#'\n";
+    // 3. BME280 via STM32 (eigen thread)
+    std::unique_ptr<BmeReader> bme;
+    if (!cfg.bmeDevice.empty()) {
+        bme = std::make_unique<BmeReader>(cfg.bmeDevice, cfg.bmeBaud, mqtt, cfg.bmeTopic);
+        bme->start();
+        std::cout << "BME280: lees " << cfg.bmeDevice << " -> '" << cfg.bmeTopic << "'\n";
+    }
+    if (useRoomba)
+        std::cout << "Roomba: sensoren op '" << sensorTopic << "', commando's op '" << cfg.prefix << "/cmd/#'\n";
+
+    // 4. Hoofdlus
     int failures = 0;
     SensorData data;
     while (g_running) {
-        if (roomba.readSensors(data)) {
-            failures = 0;
-            mqtt.publish(sensorTopic, data.toJson());
-        } else if (++failures % 10 == 1) {
-            std::cerr << "Sensoren lezen mislukt (" << failures << "x): " << serial.lastError() << "\n";
+        if (useRoomba) {
+            if (roomba.readSensors(data)) {
+                failures = 0;
+                mqtt.publish(sensorTopic, data.toJson());
+            } else if (++failures % 10 == 1) {
+                std::cerr << "Sensoren lezen mislukt (" << failures << "x): " << serial.lastError() << "\n";
+            }
+            handler->tick();
         }
-        handler.tick();
         std::this_thread::sleep_for(std::chrono::milliseconds(cfg.pollMs));
     }
 
-    // 4. Netjes afsluiten: wielen stoppen en OI uitzetten (beschermt de accu)
+    // 5. Netjes afsluiten
     std::cout << "Afsluiten...\n";
-    roomba.stopMotors();
-    mqtt.publish(statusTopic, "offline", true, 1);
-    roomba.stop();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    if (bme) bme->stop();
+    if (useRoomba) {
+        roomba.stopMotors();
+        mqtt.publish(statusTopic, "offline", true, 1);
+        roomba.stop();  // OI uit, beschermt de accu
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
     mqtt.disconnect();
     return 0;
 }

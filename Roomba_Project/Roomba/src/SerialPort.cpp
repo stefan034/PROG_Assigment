@@ -56,6 +56,7 @@ bool SerialPort::open(const std::string& device, int baud) {
 }
 
 void SerialPort::close() {
+    rxBuf_.clear();
     if (fd_ >= 0) {
         ::close(fd_);
         fd_ = -1;
@@ -115,4 +116,27 @@ bool SerialPort::readExact(uint8_t* buf, size_t len, int timeoutMs) {
 
 void SerialPort::flushInput() {
     if (fd_ >= 0) tcflush(fd_, TCIFLUSH);
+}
+
+bool SerialPort::readLine(std::string& line, int timeoutMs) {
+    using clock = std::chrono::steady_clock;
+    const auto deadline = clock::now() + std::chrono::milliseconds(timeoutMs);
+    while (true) {
+        auto rem = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - clock::now()).count();
+        if (rem <= 0) {
+            lastError_ = "Timeout bij lezen";
+            return false;
+        }
+        uint8_t c;
+        if (!readExact(&c, 1, static_cast<int>(rem))) return false;
+        if (c == '\n') {
+            line = rxBuf_;
+            rxBuf_.clear();
+            return true;
+        }
+        if (c != '\r') {
+            if (rxBuf_.size() < 256) rxBuf_.push_back(static_cast<char>(c));
+            else rxBuf_.clear();  // te lange regel: weggooien
+        }
+    }
 }

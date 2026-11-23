@@ -23,3 +23,8 @@ Raspberry Pi <-> iRobot Roomba 600 / Create 2 (Open Interface) <-> MQTT.
 ## Aansluiting
 - USB-kabel (Create 2) -> /dev/ttyUSB0
 - Of Mini-DIN direct op de Pi UART (/dev/serial0): Roomba TX is 5 V, de Pi is 3,3 V -> levelshifter / spanningsdeler!
+
+## BME280 via STM32 (Nucleo F091RC)
+    ./build/roomba_mqtt --device none --bme-device /dev/ttyACM0 --host localhost
+    mosquitto_sub -t 'roomba/bme280' -v
+Combineren met de Roomba: voeg gewoon `--device /dev/ttyUSB0` toe i.p.v. `--device none`.

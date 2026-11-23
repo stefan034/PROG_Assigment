@@ -19,10 +19,13 @@ public:
     // Leest exact `len` bytes binnen `timeoutMs`. Geeft false bij timeout/fout.
     bool readExact(uint8_t* buf, size_t len, int timeoutMs);
     void flushInput();
+    // Leest tot en met '\n' (zonder \r\n in `line`). Een half ontvangen regel blijft bewaard bij timeout.
+    bool readLine(std::string& line, int timeoutMs);
 
     const std::string& lastError() const { return lastError_; }
 
 private:
     int fd_ = -1;
     std::string lastError_;
+    std::string rxBuf_;
 };

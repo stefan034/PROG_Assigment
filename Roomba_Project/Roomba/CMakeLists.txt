@@ -18,6 +18,7 @@ add_executable(roomba_mqtt
   src/SensorData.cpp
   src/MQTTClient.cpp
   src/CommandHandler.cpp
+  src/STM_Com.cpp
 )
 
 target_include_directories(roomba_mqtt PRIVATE include ${MOSQUITTO_INCLUDE_DIRS})
