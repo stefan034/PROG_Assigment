@@ -84,8 +84,8 @@ all: main-build
 main-build: BME280_1.elf secondary-outputs
 
 # Tool invocations
-BME280_1.elf BME280_1.map: $(OBJS) $(USER_OBJS) C:\Users\stefa\OneDrive\Documents\Leerjaar_2_2023-2024\S3\PROG_5\Roomba_Project\BME280_1\STM32F091RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "BME280_1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0 -T"C:\Users\stefa\OneDrive\Documents\Leerjaar_2_2023-2024\S3\PROG_5\Roomba_Project\BME280_1\STM32F091RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BME280_1.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+BME280_1.elf BME280_1.map: $(OBJS) $(USER_OBJS) C:\Users\stefa\OneDrive\Documents\Leerjaar_2_2023-2024\S3\PROG_5\BME280_STM32\BME280_1\STM32F091RCTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "BME280_1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m0 -T"C:\Users\stefa\OneDrive\Documents\Leerjaar_2_2023-2024\S3\PROG_5\BME280_STM32\BME280_1\STM32F091RCTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="BME280_1.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
