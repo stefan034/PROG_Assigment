@@ -1,0 +1,12 @@
+Nog te doen voor Roemba project
+
+BME280 -> STM32 
+Raspberry pi -> Roemba 
+Raspberry pi -> Roemba status naar MQTT 
+Rapsberry pi <-> STM32 communicatie 
+Raspberry pi -> gegevens BME280 naar MQTT 
+
+Unit tests voor alle code? 
+Alles in een project behalve STM32 BME280
+
+Daarna Johan mailen en vragen of dit voldoende is
