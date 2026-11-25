@@ -6,8 +6,9 @@
 #include "SensorData.hpp"
 #include "SerialPort.hpp"
 
-// Implementeert een deel van de iRobot Create 2 / Roomba 600 Open Interface.
-// Alle publieke methodes zijn thread-safe (MQTT-callbacks draaien in een andere thread).
+
+// Implement a part of the iRobot Create 2 / Roomba 600 Open Interface.
+// All public methods are thread-safe (MQTT callbacks run in a different thread).
 class Roomba {
 public:
     static constexpr int16_t kRadiusStraight = 32767;  // 0x7FFF
@@ -18,10 +19,10 @@ public:
 
     // Modus-commando's
     bool start();    // opcode 128 -> Passive
-    bool passive();  // zelfde als start()
+    bool passive();  // same as start()
     bool safe();     // opcode 131
     bool full();     // opcode 132
-    bool stop();     // opcode 173 -> OI uit
+    bool stop();     // opcode 173 -> OI off
     bool reset();    // opcode 7
 
     // Reinigingscommando's
@@ -31,18 +32,18 @@ public:
     bool seekDock(); // 143
     bool power();    // 133
 
-    // Actuatoren (alleen in Safe/Full)
+    // Actuatoren (only in Safe/Full)
     bool drive(int16_t velocityMmS, int16_t radiusMm);          // 137
     bool driveDirect(int16_t rightMmS, int16_t leftMmS);        // 145
     bool stopMotors();                                          // drive 0
     bool setMotorsPwm(int8_t mainBrush, int8_t sideBrush, uint8_t vacuum);  // 144
     bool setLeds(uint8_t ledBits, uint8_t powerColor, uint8_t powerIntensity);  // 139
 
-    // Sensoren uitlezen via Query List (149). Geeft false bij timeout of fout.
+    // Sensor readings are cached in `out` and can be accessed from other threads.
     bool readSensors(SensorData& out);
 
 private:
-    bool send(std::initializer_list<uint8_t> bytes);  // caller houdt mutex vast
+    bool send(std::initializer_list<uint8_t> bytes);  // caller holds mutex 
     SerialPort& port_;
     std::mutex mutex_;
 };

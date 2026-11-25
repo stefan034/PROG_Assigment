@@ -8,7 +8,7 @@ enum class OiMode : uint8_t { Off = 0, Passive = 1, Safe = 2, Full = 3, Unknown 
 const char* toString(OiMode mode);
 const char* chargingStateToString(uint8_t state);
 
-// Een momentopname van de sensoren die we pollen.
+// A snapshot of the sensors we poll.
 struct SensorData {
     uint8_t bumpsAndDrops = 0;     // packet 7
     uint8_t chargingState = 0;     // packet 21
@@ -28,6 +28,6 @@ struct SensorData {
     bool wheelDropRight() const { return bumpsAndDrops & 0x04; }
     bool wheelDropLeft() const { return bumpsAndDrops & 0x08; }
 
-    // Geeft een JSON-string terug (zonder externe JSON-bibliotheek).
+    // Returns a JSON string (without external JSON library).
     std::string toJson() const;
 };
